@@ -1,6 +1,7 @@
 package de.tforneberg.patchdb.service.imageupload
 
 import mu.KLogger
+import mu.KotlinLogging
 import net.coobird.thumbnailator.Thumbnails
 import org.springframework.web.multipart.MultipartFile
 import java.awt.image.BufferedImage
@@ -35,7 +36,9 @@ interface ImageUploadService {
 
     fun getBasePath() : String
 
-    fun getLogger() : KLogger
+    fun getLogger(): KLogger {
+        return KotlinLogging.logger {}
+    }
 
     fun uploadFile(filePathAndName:String, file:File) : Boolean
 

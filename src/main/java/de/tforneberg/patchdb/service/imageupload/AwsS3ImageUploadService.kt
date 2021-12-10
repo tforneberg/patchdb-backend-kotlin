@@ -1,7 +1,5 @@
 package de.tforneberg.patchdb.service.imageupload
 
-import mu.KLogger
-import mu.KotlinLogging
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.stereotype.Service
 import software.amazon.awssdk.auth.credentials.AwsBasicCredentials
@@ -40,10 +38,6 @@ class AwsS3ImageUploadService : ImageUploadService {
                 .region(Region.EU_CENTRAL_1)
                 .credentialsProvider(StaticCredentialsProvider.create(credentials))
                 .build()
-    }
-
-    override fun getLogger(): KLogger {
-        return KotlinLogging.logger {}
     }
 
     override fun getBasePath() : String {
