@@ -51,13 +51,13 @@ class AwsS3ImageUploadService : ImageUploadService {
         return response.sdkHttpResponse().isSuccessful
     }
 
-    override fun uploadFile(filePathAndName: String, file: File): Boolean {
+    override fun uploadFile(filePathAndNameToUploadTo: String, fileToUpload: File): Boolean {
         val response = client.putObject(PutObjectRequest.builder()
                 .bucket(bucketName)
-                .key(filePathAndName)
+                .key(filePathAndNameToUploadTo)
                 .acl(ObjectCannedACL.PUBLIC_READ)
                 .build(),
-                RequestBody.fromFile(file))
+                RequestBody.fromFile(fileToUpload))
         return response.sdkHttpResponse().isSuccessful
     }
 

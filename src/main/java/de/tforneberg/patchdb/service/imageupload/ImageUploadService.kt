@@ -13,7 +13,7 @@ import javax.imageio.ImageIO
 
 interface ImageUploadService {
 
-    fun uploadFile(filePathAndName:String, file:File) : Boolean
+    fun uploadFile(filePathAndNameToUploadTo:String, fileToUpload:File) : Boolean
 
     fun deleteFileFromStorage(fileName: String): Boolean
 
@@ -62,12 +62,12 @@ interface ImageUploadService {
                 storeImageWithMaxSize(bufferedOriginalImage, originalFile, imageMaxSize, fileName, entityPath)
                 storeImageWithMaxSize(bufferedOriginalImage, originalFile, thumbnailMaxSize, fileNameSmall, entityPath)
 
-                return "${getBasePath()}/$entityPath/$fileName"
+                return getImagePathForDatabase(entityPath, fileName)
             } else {
-                getLogger().error { "could not upload image" }
+                getLogger().error() { "could not upload image" }
             }
         } catch (e: Exception) {
-            getLogger().error { e }
+            getLogger().error(e) { "error while uploading file" }
         } finally {
             deleteTemporaryFile(originalFile);
         }
@@ -116,6 +116,10 @@ interface ImageUploadService {
 
     fun getFilenameFromUrl(fileUrl: String): String {
         return fileUrl.substring(fileUrl.lastIndexOf("/") + 1)
+    }
+
+    fun getImagePathForDatabase(entityPath: String, fileName: String): String{
+        return "${getBasePath()}/$entityPath/$fileName"
     }
 
     companion object {

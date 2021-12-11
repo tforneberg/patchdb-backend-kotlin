@@ -36,6 +36,10 @@ aws.secretKey=<secretKey>
 aws.endpointUrl=https://s3.eu-central-1.amazonaws.com
 aws.bucketName=patchimagedb
 
+# Local image upload (for development) absolute folder path
+localdev.imageupload.url = http://localhost:8080/api
+localdev.imageupload.path = /home/user/IdeaProjects/patchdb-backend-kotlin
+
 # Mail Server credentials
 spring.mail.host=smtp.mailtrap.io
 spring.mail.port=25
