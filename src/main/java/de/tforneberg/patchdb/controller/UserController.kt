@@ -2,6 +2,7 @@ package de.tforneberg.patchdb.controller
 
 import com.fasterxml.jackson.annotation.JsonView
 import de.tforneberg.patchdb.error.BadRequestException
+import de.tforneberg.patchdb.event.OnRegistrationCompleteEvent
 import de.tforneberg.patchdb.model.Collection
 import de.tforneberg.patchdb.model.Patch
 import de.tforneberg.patchdb.model.Patch.PatchState
@@ -12,10 +13,12 @@ import de.tforneberg.patchdb.model.dto.ChangePasswordRequestData
 import de.tforneberg.patchdb.model.dto.RegisterRequestData
 import de.tforneberg.patchdb.repo.PatchRepository
 import de.tforneberg.patchdb.repo.UserRepository
+import de.tforneberg.patchdb.repo.UserVerificationTokenRepository
 import de.tforneberg.patchdb.repo.utils.UserUtils
 import de.tforneberg.patchdb.service.imageupload.ImageUploadService
 import de.tforneberg.patchdb.validation.ChangePasswordRequestValidator
 import de.tforneberg.patchdb.validation.RegisterRequestValidator
+import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
 import org.springframework.http.ResponseEntity
@@ -25,16 +28,20 @@ import org.springframework.security.crypto.password.PasswordEncoder
 import org.springframework.validation.BindingResult
 import org.springframework.web.bind.annotation.*
 import org.springframework.web.multipart.MultipartFile
+import java.util.*
+import javax.servlet.http.HttpServletRequest
 
 @RestController
 @RequestMapping("/api/users")
 class UserController(
         private val userRepository: UserRepository,
+        private val userVerificationTokenRepository: UserVerificationTokenRepository,
         private val patchRepo: PatchRepository,
         private val changePwValidator: ChangePasswordRequestValidator,
         private val registerValidator: RegisterRequestValidator,
         private val passwordEncoder: PasswordEncoder,
         private val userUtils: UserUtils,
+        private val eventPublisher: ApplicationEventPublisher,
         private val imageUploadService: ImageUploadService
 ) : PatchdbController() {
     interface UserAndPatchDefaultView : Patch.DefaultView, User.DefaultView
@@ -70,20 +77,39 @@ class UserController(
 
     //POST
     @PostMapping("/register")
-    fun register(@RequestBody req: RegisterRequestData, result: BindingResult): ResponseEntity<Void> {
+    fun register(@RequestBody req: RegisterRequestData, result: BindingResult, request: HttpServletRequest): ResponseEntity<Void> {
         registerValidator.validate(req, result)
         if (result.hasErrors()) {
             throw BadRequestException(result)
         }
-        val user = User(
+        var user = User(
                 name = req.name,
                 email = req.email,
-                status = UserStatus.user,
+                status = UserStatus.unconfirmed,
                 password = passwordEncoder.encode(req.password)
         )
-        userRepository.save(user)
-        //todo: send confirmation email
+        user = userRepository.save(user)
+        eventPublisher.publishEvent(OnRegistrationCompleteEvent(user, request.locale, request.contextPath))
+
         return ResponseEntity.ok().build()
+    }
+
+    //POST
+    @GetMapping("/registrationConfirmation")
+    fun registrationConfirmation(@RequestParam("token") tokenString: String, request: HttpServletRequest): ResponseEntity<String> {
+        return userVerificationTokenRepository.findByToken(tokenString)?.let { token ->
+            val currentTime = Calendar.getInstance().time.time
+            val tokenIsNotExpired = (token.expiryDate?.time?: -1) - currentTime > 0
+            if (tokenIsNotExpired) {
+                token.user?. let {
+                    it.status = UserStatus.user
+                    userRepository.save(it)
+                    ResponseEntity(HttpStatus.OK)
+                }?: ResponseEntity.badRequest().body("User from token not found")
+            } else {
+                ResponseEntity.badRequest().body("Token expired")
+            }
+        } ?: ResponseEntity.badRequest().body("Token not found")
     }
 
     @PostMapping(Constants.ID_MAPPING + "/image")
@@ -91,7 +117,7 @@ class UserController(
     fun uploadImage(@PathVariable("id") userId: Int, file: MultipartFile?): ResponseEntity<Void> {
         return userRepository.findByIdOrNull(userId)?.let { user ->
             val fileUrl = file?.let { file -> imageUploadService.storeUserImageAndThumbnail(file) }
-            if (!fileUrl.isNullOrEmpty()) {
+            return if (!fileUrl.isNullOrEmpty()) {
                 user.image = fileUrl
                 userRepository.save(user)
                 ResponseEntity.ok().build()
@@ -150,8 +176,8 @@ class UserController(
         return userRepository.findByIdOrNull(userId)?.let { user ->
             user.password = passwordEncoder.encode(data.password)
             userRepository.save(user)
-            ResponseEntity.ok().build()
-        } ?: ResponseEntity.notFound().build()
+            ResponseEntity<String>(HttpStatus.OK)
+        } ?: ResponseEntity<String>(HttpStatus.NOT_FOUND)
     }
 
     @PatchMapping(Constants.ID_MAPPING + "/patches")

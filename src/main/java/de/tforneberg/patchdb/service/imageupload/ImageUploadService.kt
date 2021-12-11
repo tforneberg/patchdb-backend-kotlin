@@ -13,6 +13,10 @@ import javax.imageio.ImageIO
 
 interface ImageUploadService {
 
+    fun uploadFile(filePathAndName:String, file:File) : Boolean
+
+    fun deleteFileFromStorage(fileName: String): Boolean
+
     fun storePatchImageAndThumbnail(multipartFile: MultipartFile): String? {
         return storeImageAndThumbnail(multipartFile, "patches", 1500, 300)
     }
@@ -20,8 +24,6 @@ interface ImageUploadService {
     fun storeUserImageAndThumbnail(multipartFile: MultipartFile): String? {
         return storeImageAndThumbnail(multipartFile, "users", 1000, 200)
     }
-
-    fun deleteFileFromStorage(fileName: String): Boolean
 
     fun deleteImageAndThumbnailFromStorage(imageUrl: String): Boolean {
         val fileName = getFilenameFromUrl(imageUrl)
@@ -39,8 +41,6 @@ interface ImageUploadService {
     fun getLogger(): KLogger {
         return KotlinLogging.logger {}
     }
-
-    fun uploadFile(filePathAndName:String, file:File) : Boolean
 
     /**
      * Uploads an image to the s3 storage after extracting it from the given MultipartFile. Returns the url.
@@ -69,7 +69,7 @@ interface ImageUploadService {
         } catch (e: Exception) {
             getLogger().error { e }
         } finally {
-            originalFile?.delete()
+            deleteTemporaryFile(originalFile);
         }
         return null
     }
@@ -88,8 +88,12 @@ interface ImageUploadService {
         } catch (e: Exception) {
             getLogger().error { e }
         } finally {
-            tempFileToUpload.delete()
+            deleteTemporaryFile(tempFileToUpload);
         }
+    }
+
+    fun deleteTemporaryFile(temporaryFile: File?) {
+        temporaryFile?.delete();
     }
 
     @Throws(IOException::class)

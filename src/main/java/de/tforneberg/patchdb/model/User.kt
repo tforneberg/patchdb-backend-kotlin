@@ -59,7 +59,7 @@ data class User(
     interface CompleteView : DefaultView
 
     enum class UserStatus {
-        admin, mod, user, blockedUser
+        admin, mod, user, blockedUser, unconfirmed
     }
 
     fun addPatch(patch: Patch) {

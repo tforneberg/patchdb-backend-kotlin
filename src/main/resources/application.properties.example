@@ -12,6 +12,8 @@ spring.jpa.properties.hibernate.jdbc.time_zone = UTC
 #spring.jpa.properties.hibernate.format_sql=true
 #logging.level.org.hibernate.SQL=DEBUG
 logging.level.org.hibernate.type.descriptor.sql.BasicBinder=TRACE
+spring.jpa.generate-ddl=true
+spring.jpa.hibernate.ddl-auto=update
 
 # Path
 # spring.data.rest.base-path=/api
@@ -33,5 +35,11 @@ aws.accessKey=<accessKey>
 aws.secretKey=<secretKey>
 aws.endpointUrl=https://s3.eu-central-1.amazonaws.com
 aws.bucketName=patchimagedb
+
+# Mail Server credentials
+spring.mail.host=smtp.mailtrap.io
+spring.mail.port=25
+spring.mail.username=<username>
+spring.mail.password=<password>
 
 spring.mvc.throw-exception-if-no-handler-found=true

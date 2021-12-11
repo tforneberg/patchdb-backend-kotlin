@@ -21,13 +21,13 @@
 	<properties>
 		<packaging>jar</packaging><!-- set to war for creating WAR (without Tomcat) instead of JAR (with Tomcat) -->
 		<version>0.0.1-SNAPSHOT</version>
-		<java.version>11</java.version>
+		<java.version>16</java.version>
 
-		<thumbnailator.version>0.4.8</thumbnailator.version>
+		<thumbnailator.version>0.4.14</thumbnailator.version>
 		<typescript.codegeneration.version>2.17.558</typescript.codegeneration.version>
 		<amazon.awssdk.version>2.4.12</amazon.awssdk.version>
-		<modelmapper.version>2.3.4</modelmapper.version>
-		<slf4j.version>1.7.5</slf4j.version>
+		<modelmapper.version>2.4.4</modelmapper.version>
+		<slf4j.version>1.7.32</slf4j.version>
 		<kotlin-logging.version>1.12.5</kotlin-logging.version>
 		<kotlin-jackson.version>2.13.0</kotlin-jackson.version>
 		
@@ -98,6 +98,11 @@
 		    <groupId>org.springframework.boot</groupId>
 		    <artifactId>spring-boot-starter-security</artifactId>
 	    </dependency>
+
+		<dependency><!--  Mailing -->
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
 
 		<dependency><!-- JSON processing and object mapping library -->
 		    <groupId>org.apache.johnzon</groupId>

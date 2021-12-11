@@ -17,7 +17,7 @@ class RegisterRequestValidator(private val userRepo: UserRepository) : Validator
     override fun validate(o: Any, errors: Errors) {
         val req = o as RegisterRequestData
         ValidationUtils.rejectIfEmptyOrWhitespace(errors, "name", "notEmpty")
-        if (req.name.length < 6 || req.name.length > 32) {
+        if (req.name.length < 4 || req.name.length > 32) {
             errors.rejectValue("name", "size")
         }
         userRepo.findByName(req.name)?.let {

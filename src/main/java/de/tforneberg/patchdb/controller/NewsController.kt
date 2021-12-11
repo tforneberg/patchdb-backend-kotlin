@@ -66,14 +66,14 @@ class NewsController(private val userRepo:UserRepository, private val newsRepo:N
     @DeleteMapping(Constants.ID_MAPPING)
     @PreAuthorize(Constants.AUTH_ADMIN_OR_MOD)
     fun deleteNews(@PathVariable("id") id: Int, auth: Authentication): ResponseEntity<Void> {
-        return newsRepo.findByIdOrNull(id) ?. let {
+        return newsRepo.findByIdOrNull(id)?. let {
                     if (wasCreatedByRequestingUser(it, auth) || userHasStatus(auth, UserStatus.admin)) {
                         newsRepo.delete(it)
-                        ResponseEntity.ok().build()
+                        ResponseEntity<Void>(HttpStatus.OK)
                     } else {
-                        ResponseEntity.status(HttpStatus.FORBIDDEN).build()
+                        ResponseEntity<Void>(HttpStatus.FORBIDDEN)
                     }
-                } ?: ResponseEntity.notFound().build()
+                } ?: ResponseEntity<Void>(HttpStatus.NOT_FOUND)
     }
 
     private fun wasCreatedByRequestingUser(news: News, authentication: Authentication): Boolean {
