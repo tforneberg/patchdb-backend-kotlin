@@ -60,6 +60,7 @@ class SecurityConfig(
                 .authorizeRequests()
                     //.antMatchers("/", "/js/**", "/css/**", "/img/**", "/favicon.ico", "/index.html").permitAll() //everyone should be able to retrieve frontend
                     .antMatchers("/api/users/register").permitAll() //everyone should be able to register
+                    .antMatchers("/api/users/registrationConfirmation").permitAll() //everyone should be able to confirm registration
                     .antMatchers("/api/patches").permitAll() //everyone should be able to get patches list
                     .antMatchers("/api/**").authenticated() //everything else from API requires authentication
             .and()

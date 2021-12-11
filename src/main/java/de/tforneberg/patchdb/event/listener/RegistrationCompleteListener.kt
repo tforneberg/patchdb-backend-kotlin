@@ -8,6 +8,7 @@ import org.springframework.context.MessageSource
 import org.springframework.mail.SimpleMailMessage
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.stereotype.Component
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder
 import java.util.*
 
 @Component
@@ -27,15 +28,17 @@ class RegistrationCompleteListener(
 
         val recipientAddress: String? = event.user.email
         val subject = "Registration Confirmation"
-        val confirmationUrl: String = event.appUrl + "/registrationConfirmation?token=" + userVerificationToken.token
+
         //val message: String = messageSource.getMessage("message.regSucc", null, event.locale)
-        val message = "Deine Registrierung war erfolgreich. Bitte klicke auf den Link um diese zu bestätigen:"
+        val message = "Deine Registrierung war erfolgreich. Bitte rufe den folgenden Link auf um diese zu bestätigen:"
+        val confirmationUrl: String = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString() +
+                "/api/users/registrationConfirmation?token=" + userVerificationToken.token
 
         val email = SimpleMailMessage()
-        email.setTo("test@patchdb.de")
+        email.setFrom("test@patchdb.de")
         email.setTo(recipientAddress)
         email.setSubject(subject)
-        email.setText("$message\r\nhttp://localhost:8080$confirmationUrl") //TODO add proper url
+        email.setText("$message\r\n$confirmationUrl")
 
          mailSender.send(email)
     }

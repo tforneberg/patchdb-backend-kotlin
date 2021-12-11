@@ -27,3 +27,4 @@
 ### copied frontend code ###
 /src/main/resources/static/
 /src/main/resources/application.properties
+/google-cloud-credentials.json

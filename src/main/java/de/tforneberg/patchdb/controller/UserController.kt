@@ -15,6 +15,7 @@ import de.tforneberg.patchdb.repo.PatchRepository
 import de.tforneberg.patchdb.repo.UserRepository
 import de.tforneberg.patchdb.repo.UserVerificationTokenRepository
 import de.tforneberg.patchdb.repo.utils.UserUtils
+import de.tforneberg.patchdb.service.RecaptchaService
 import de.tforneberg.patchdb.service.imageupload.ImageUploadService
 import de.tforneberg.patchdb.validation.ChangePasswordRequestValidator
 import de.tforneberg.patchdb.validation.RegisterRequestValidator
@@ -42,8 +43,9 @@ class UserController(
         private val passwordEncoder: PasswordEncoder,
         private val userUtils: UserUtils,
         private val eventPublisher: ApplicationEventPublisher,
-        private val imageUploadService: ImageUploadService
-) : PatchdbController() {
+        private val imageUploadService: ImageUploadService,
+        private val recaptchaService: RecaptchaService) : PatchdbController() {
+
     interface UserAndPatchDefaultView : Patch.DefaultView, User.DefaultView
 
     //GET
@@ -54,8 +56,13 @@ class UserController(
     }
 
     @GetMapping("/login")
-    fun login(): ResponseEntity<Void> {
-        return ResponseEntity.ok().build()
+    fun login(@RequestParam("recaptchaToken") recaptchaToken: String): ResponseEntity<Void> {
+        return if (recaptchaService.isAValidUserAction(recaptchaToken, "LOGIN")) {
+            ResponseEntity.ok().build()
+        } else {
+            //TODO handle this in a proper way, e.g. one time password per mail
+            ResponseEntity.badRequest().build()
+        }
     }
 
     @GetMapping("/name/{name}") //better as query param ...  /&name={name} would allow generic search for every field, more REST conform
@@ -75,26 +82,6 @@ class UserController(
         return ResponseEntity.ok().body(result.content)
     }
 
-    //POST
-    @PostMapping("/register")
-    fun register(@RequestBody req: RegisterRequestData, result: BindingResult, request: HttpServletRequest): ResponseEntity<Void> {
-        registerValidator.validate(req, result)
-        if (result.hasErrors()) {
-            throw BadRequestException(result)
-        }
-        var user = User(
-                name = req.name,
-                email = req.email,
-                status = UserStatus.unconfirmed,
-                password = passwordEncoder.encode(req.password)
-        )
-        user = userRepository.save(user)
-        eventPublisher.publishEvent(OnRegistrationCompleteEvent(user, request.locale, request.contextPath))
-
-        return ResponseEntity.ok().build()
-    }
-
-    //POST
     @GetMapping("/registrationConfirmation")
     fun registrationConfirmation(@RequestParam("token") tokenString: String, request: HttpServletRequest): ResponseEntity<String> {
         return userVerificationTokenRepository.findByToken(tokenString)?.let { token ->
@@ -104,12 +91,34 @@ class UserController(
                 token.user?. let {
                     it.status = UserStatus.user
                     userRepository.save(it)
-                    ResponseEntity(HttpStatus.OK)
+
+                    userVerificationTokenRepository.delete(token)
+
+                    ResponseEntity.ok().body("Registration confirmed")
                 }?: ResponseEntity.badRequest().body("User from token not found")
             } else {
                 ResponseEntity.badRequest().body("Token expired")
             }
         } ?: ResponseEntity.badRequest().body("Token not found")
+    }
+
+    //POST
+    @PostMapping("/register")
+    fun register(@RequestBody req: RegisterRequestData, result: BindingResult, request: HttpServletRequest): ResponseEntity<Void> {
+        registerValidator.validate(req, result)
+        if (result.hasErrors()) {
+            throw BadRequestException(result)
+        }
+        var user = User(
+            name = req.name,
+            email = req.email,
+            status = UserStatus.unconfirmed,
+            password = passwordEncoder.encode(req.password)
+        )
+        user = userRepository.save(user)
+        eventPublisher.publishEvent(OnRegistrationCompleteEvent(user, request.locale))
+
+        return ResponseEntity.ok().build()
     }
 
     @PostMapping(Constants.ID_MAPPING + "/image")

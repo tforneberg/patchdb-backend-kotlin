@@ -6,5 +6,4 @@ import java.util.*
 
 data class OnRegistrationCompleteEvent(
         var user: User,
-        var locale: Locale,
-        var appUrl: String) : ApplicationEvent(user)
+        var locale: Locale) : ApplicationEvent(user)

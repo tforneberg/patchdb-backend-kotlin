@@ -26,10 +26,12 @@
 		<thumbnailator.version>0.4.14</thumbnailator.version>
 		<typescript.codegeneration.version>2.17.558</typescript.codegeneration.version>
 		<amazon.awssdk.version>2.4.12</amazon.awssdk.version>
+		<google.cloud.bom.version>24.0.0</google.cloud.bom.version>
 		<modelmapper.version>2.4.4</modelmapper.version>
 		<slf4j.version>1.7.32</slf4j.version>
 		<kotlin-logging.version>1.12.5</kotlin-logging.version>
 		<kotlin-jackson.version>2.13.0</kotlin-jackson.version>
+		<google.recaptchaenterprise.version>2.3.1</google.recaptchaenterprise.version>
 		
 		<typescript.codegeneration.pattern>de.tforneberg.patchdb.model.**</typescript.codegeneration.pattern>
 		
@@ -124,7 +126,13 @@
       		<groupId>software.amazon.awssdk</groupId>
 	      	<artifactId>s3</artifactId>
 		</dependency>
-		
+
+		<dependency><!-- Google Recaptcha -->
+			<groupId>com.google.cloud</groupId>
+			<artifactId>google-cloud-recaptchaenterprise</artifactId>
+			<version>${google.recaptchaenterprise.version}</version>
+		</dependency>
+
 		<dependency><!-- Thumbnail generation library -->
 		  	<groupId>net.coobird</groupId>
 		  	<artifactId>thumbnailator</artifactId>

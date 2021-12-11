@@ -3,6 +3,7 @@ package de.tforneberg.patchdb.service.imageupload
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Service
+import org.springframework.web.servlet.support.ServletUriComponentsBuilder
 import java.io.File
 import java.nio.file.Files
 import java.nio.file.Path
@@ -13,9 +14,6 @@ class LocalServerImageUploadService : ImageUploadService {
 
     @Value("\${localdev.imageupload.path}")
     private val internalBasePathOnServer: String? = null
-
-    @Value("\${localdev.imageupload.url}")
-    private val baseUrlForDatabase: String? = null
 
     override fun uploadFile(filePathAndNameToUploadTo: String, fileToUpload: File): Boolean {
         return try {
@@ -31,7 +29,7 @@ class LocalServerImageUploadService : ImageUploadService {
 
     override fun deleteFileFromStorage(fileName: String): Boolean {
         return try {
-            //TODO check if this works
+            //TODO check if this works --> DOES NOT WORK! FIX IT! MAYBE EVEN FOR AWS ?! BECAUSE how to separate patches/images ?
             Files.delete(Path.of(fileName))
             true
         } catch (e: Exception) {
@@ -41,7 +39,8 @@ class LocalServerImageUploadService : ImageUploadService {
     }
 
     override fun getImagePathForDatabase(entityPath: String, fileName: String): String{
-        return "${baseUrlForDatabase}/images/$entityPath/$fileName"
+        val baseUrl: String = ServletUriComponentsBuilder.fromCurrentContextPath().build().toUriString()
+        return "${baseUrl}/api/images/$entityPath/$fileName"
     }
 
     override fun getBasePath(): String {

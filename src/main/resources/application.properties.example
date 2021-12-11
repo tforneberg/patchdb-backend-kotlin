@@ -26,6 +26,10 @@ server.servlet.session.persistent=true
 security.require-ssl=true
 cors.allowedUrls=http://localhost:8081
 
+# Recaptcha
+google.recaptcha.projectid=PatchDB
+google.recaptcha.key.site=<key>
+
 # Max Upload file size
 spring.servlet.multipart.max-file-size=2048KB
 spring.servlet.multipart.max-request-size=2048KB
@@ -37,7 +41,6 @@ aws.endpointUrl=https://s3.eu-central-1.amazonaws.com
 aws.bucketName=patchimagedb
 
 # Local image upload (for development) absolute folder path
-localdev.imageupload.url = http://localhost:8080/api
 localdev.imageupload.path = /home/user/IdeaProjects/patchdb-backend-kotlin
 
 # Mail Server credentials
