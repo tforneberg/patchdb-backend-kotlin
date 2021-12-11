@@ -109,16 +109,21 @@ class UserController(
         if (result.hasErrors()) {
             throw BadRequestException(result)
         }
-        var user = User(
-            name = req.name,
-            email = req.email,
-            status = UserStatus.unconfirmed,
-            password = passwordEncoder.encode(req.password)
-        )
-        user = userRepository.save(user)
-        eventPublisher.publishEvent(OnRegistrationCompleteEvent(user, request.locale))
+        return if (recaptchaService.isAValidUserAction(req.recaptchaToken, "REGISTER")) {
+            var user = User(
+                name = req.name,
+                email = req.email,
+                status = UserStatus.unconfirmed,
+                password = passwordEncoder.encode(req.password)
+            )
+            user = userRepository.save(user)
+            eventPublisher.publishEvent(OnRegistrationCompleteEvent(user, request.locale))
 
-        return ResponseEntity.ok().build()
+            ResponseEntity.ok().build()
+        } else {
+            //TODO handle this in a proper way, e.g. one time password per mail
+            ResponseEntity.badRequest().build()
+        }
     }
 
     @PostMapping(Constants.ID_MAPPING + "/image")

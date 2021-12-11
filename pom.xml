@@ -35,7 +35,7 @@
 		
 		<typescript.codegeneration.pattern>de.tforneberg.patchdb.model.**</typescript.codegeneration.pattern>
 		
-		<frontend.path>${project.basedir}/../patchdb_frontend/</frontend.path>
+		<frontend.path>${project.basedir}/../patchdb-frontend/</frontend.path>
 		<frontend.generated.file.path>${frontend.path}src/model/Model.ts</frontend.generated.file.path>
 		<compiled.frontend.path>${frontend.path}target/dist</compiled.frontend.path>
 	</properties>

@@ -22,5 +22,9 @@ data class RegisterRequestData(
 
     @field:NotNull
     @field:NotEmpty
-    var acceptedTerms: Boolean = false
+    var acceptedTerms: Boolean = false,
+
+    @field:NotNull
+    @field:NotEmpty
+    var recaptchaToken: String = ""
 )

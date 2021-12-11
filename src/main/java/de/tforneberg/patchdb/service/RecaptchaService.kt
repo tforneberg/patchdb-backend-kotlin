@@ -87,8 +87,6 @@ class RecaptchaService {
                 .setAssessment(Assessment.newBuilder().setEvent(event).build())
                 .build()
 
-            client.close()
-
             return client.createAssessment(createAssessmentRequest)
         }
     }

@@ -44,5 +44,7 @@ class RegisterRequestValidator(private val userRepo: UserRepository) : Validator
         if (!req.acceptedTerms) {
             errors.rejectValue("acceptedTerms", "notAccepted")
         }
+
+        ValidationUtils.rejectIfEmptyOrWhitespace(errors, "recaptchaToken", "notEmpty")
     }
 }
