@@ -15,7 +15,7 @@ interface PatchRepository : JpaRepository<Patch, Int> {
 
     @Query(value = "SELECT * FROM patches WHERE id IN (SELECT patch_id FROM collections WHERE user_id = ?1) AND state = ?2",
             nativeQuery = true, countQuery = "SELECT count(*) FROM  patches WHERE id IN (SELECT patch_id FROM collections WHERE user_id = ?1) AND state = ?2")
-    fun findPatchesByUserIdAndWithState(id: Int, state: PatchState, page: Pageable): Page<Patch> //TODO convert to JPQL ... how with collection?
+    fun findPatchesByUserIdAndWithState(id: Int, state: String, page: Pageable): Page<Patch> //TODO convert to JPQL ... how with collection?
 
     fun findByIdAndState(id: Int, state: PatchState): Patch?
 
@@ -25,13 +25,13 @@ interface PatchRepository : JpaRepository<Patch, Int> {
 
     @Query(value = "SELECT p FROM Patch AS p WHERE p.band.id = ?1 AND p.state = ?2",
             countQuery = "SELECT COUNT(p) FROM Patch AS p WHERE p.band.id = ?1 AND p.state = ?2")
-    fun findByBandIdAndWithState(bandId: Int, state: PatchState, page: Pageable): Page<Patch>
+    fun findByBandIdAndWithState(bandId: Int, state: String, page: Pageable): Page<Patch>
 
     @Query(value = "SELECT p FROM Patch AS p WHERE p.userInserted.id = ?1 AND p.state = ?2",
             countQuery = "SELECT COUNT(p) FROM Patch AS p WHERE p.userInserted.id = ?1 AND p.state = ?2")
-    fun findPatchesByCreatorIdAndWithState(id: Int, state: PatchState, page: Pageable): Page<Patch>
+    fun findPatchesByCreatorIdAndWithState(id: Int, state: String, page: Pageable): Page<Patch>
 
     @Query(value = "SELECT p FROM Patch AS p WHERE p.type = ?1 AND p.state = ?2",
             countQuery = "SELECT COUNT(p) FROM Patch AS p WHERE p.type = ?1 AND p.state = ?2")
-    fun findPatchesByTypeAndWithState(type: PatchType, state: PatchState, page: Pageable): Page<Patch>
+    fun findPatchesByTypeAndWithState(type: PatchType, state: String, page: Pageable): Page<Patch>
 }

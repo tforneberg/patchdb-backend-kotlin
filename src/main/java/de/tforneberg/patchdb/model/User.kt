@@ -10,7 +10,7 @@ import javax.persistence.*
 @Table(name = "users")
 @JsonIgnoreProperties("hibernateLazyInitializer", "handler")
 @JsonView(User.DefaultView::class)
-data class User(
+class User(
         @field:Column(name = "id")
         @field:GeneratedValue(strategy = GenerationType.IDENTITY)
         @field:Id
@@ -24,8 +24,8 @@ data class User(
         @field:Column(name = "status")
         var status: UserStatus?,
 
-        @field:JsonIgnore
         @field:Column(name = "email")
+        @field:JsonView(OwnerCompleteView::class)
         var email: String?,
 
         @Column(name = "image")
@@ -57,6 +57,9 @@ data class User(
 
     @JsonIgnoreProperties
     interface CompleteView : DefaultView
+
+    @JsonIgnoreProperties
+    interface OwnerCompleteView : CompleteView
 
     enum class UserStatus {
         admin, mod, user, blockedUser, unconfirmed

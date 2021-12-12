@@ -1,4 +1,4 @@
-package de.tforneberg.patchdb.service
+package de.tforneberg.patchdb.service.recaptcha
 
 import com.google.cloud.recaptchaenterprise.v1.RecaptchaEnterpriseServiceClient
 import com.google.recaptchaenterprise.v1.Assessment
@@ -14,18 +14,20 @@ import java.io.IOException
 @Service
 class RecaptchaService {
 
-    @Value("\${google.recaptcha.projectid}")
-    private val projectID: String? = null
-
-    @Value("\${google.recaptcha.key.site}")
-    private val recaptchaSiteKey: String? = null
-
     private val logger: KLogger = KotlinLogging.logger {}
 
-    fun isAValidUserAction(token: String?, recaptchaAction: String?, validThreshold: Float = 0.3F): Boolean {
+    @Value("\${google.recaptcha.projectid:patchdb}")
+    private val projectID: String? = null
+
+    @Value("\${google.recaptcha.key.site:#{null}}")
+    private val recaptchaSiteKey: String? = null
+
+    private var recaptchaEnterpriseServiceClient: RecaptchaEnterpriseServiceClient? = null
+
+    fun isSafe(token: String?, recaptchaAction: String?, validThreshold: Float = 0.3F): Boolean {
         return try {
             createAssessment(token, recaptchaAction)?.let {
-                isAValidUserAction(it, recaptchaAction, validThreshold)
+                isSafe(it, recaptchaAction, validThreshold)
             } ?: true
         } catch (e: Exception) {
             logger.error(e) { "error while checking recaptcha" }
@@ -33,7 +35,7 @@ class RecaptchaService {
         }
     }
 
-    fun isAValidUserAction(assessment: Assessment, recaptchaAction: String?, validThreshold: Float = 0.3F): Boolean {
+    fun isSafe(assessment: Assessment, recaptchaAction: String?, validThreshold: Float = 0.3F): Boolean {
         // Check if the token is valid.
         if (!assessment.tokenProperties.valid) {
             logger.error { "The CreateAssessment call failed because the token was: " +
@@ -70,11 +72,18 @@ class RecaptchaService {
      */
     @Throws(IOException::class)
     fun createAssessment(token: String?, recaptchaAction: String?): Assessment? {
-        // Initialize a client that will be used to send requests. This client needs to be created only
-        // once, and can be reused for multiple requests. After completing all of your requests, call
-        // the `client.close()` method on the client to safely
-        // clean up any remaining background resources.
-        RecaptchaEnterpriseServiceClient.create().use { client ->
+        if (projectID == null) {
+            logger.warn { "Recaptcha check not activated! Missing configuration property google.recaptcha.projectid" }
+            return null
+        }
+        if (recaptchaSiteKey == null) {
+            logger.warn { "Recaptcha check not activated! Missing configuration property google.recaptcha.key.site" }
+            return null
+        }
+        if (recaptchaEnterpriseServiceClient == null) {
+            recaptchaEnterpriseServiceClient = RecaptchaEnterpriseServiceClient.create()
+        }
+        return recaptchaEnterpriseServiceClient?.let {
             // Set the properties of the event to be tracked.
             val event: Event = Event.newBuilder()
                 .setSiteKey(recaptchaSiteKey)
@@ -87,7 +96,7 @@ class RecaptchaService {
                 .setAssessment(Assessment.newBuilder().setEvent(event).build())
                 .build()
 
-            return client.createAssessment(createAssessmentRequest)
+            it.createAssessment(createAssessmentRequest)
         }
     }
 

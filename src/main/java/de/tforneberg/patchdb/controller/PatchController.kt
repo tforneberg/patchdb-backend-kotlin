@@ -65,7 +65,7 @@ class PatchController(
                           @PathVariable("id") bandId: Int
     ): ResponseEntity<List<Patch>> {
         val pageable = getPageable(page, size, sortBy, direction)
-        val result = patchRepository.findByBandIdAndWithState(bandId, PatchState.approved, pageable)
+        val result = patchRepository.findByBandIdAndWithState(bandId, PatchState.approved.name, pageable)
         return ResponseEntity.ok().body(result.content)
     }
 
@@ -78,7 +78,7 @@ class PatchController(
                                     @PathVariable("id") userCreatedId: Int
     ): ResponseEntity<List<Patch>> {
         val pageable = getPageable(page, size, sortBy, direction)
-        val result = patchRepository.findPatchesByCreatorIdAndWithState(userCreatedId, PatchState.approved, pageable)
+        val result = patchRepository.findPatchesByCreatorIdAndWithState(userCreatedId, PatchState.approved.name, pageable)
         return ResponseEntity.ok().body(result.content)
     }
 
@@ -92,7 +92,7 @@ class PatchController(
     ): ResponseEntity<List<Patch>> {
         val pageable = getPageable(page, size, sortBy, direction)
         val patchType = PatchType.valueOf(type)
-        val result = patchRepository.findPatchesByTypeAndWithState(patchType, PatchState.approved, pageable)
+        val result = patchRepository.findPatchesByTypeAndWithState(patchType, PatchState.approved.name, pageable)
         return ResponseEntity.ok().body(result.content)
     }
 

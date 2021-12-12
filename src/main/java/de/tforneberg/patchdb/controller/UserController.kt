@@ -2,7 +2,8 @@ package de.tforneberg.patchdb.controller
 
 import com.fasterxml.jackson.annotation.JsonView
 import de.tforneberg.patchdb.error.BadRequestException
-import de.tforneberg.patchdb.event.OnRegistrationCompleteEvent
+import de.tforneberg.patchdb.event.RegistrationCompleteEvent
+import de.tforneberg.patchdb.event.ResetPasswordEvent
 import de.tforneberg.patchdb.model.Collection
 import de.tforneberg.patchdb.model.Patch
 import de.tforneberg.patchdb.model.Patch.PatchState
@@ -11,14 +12,16 @@ import de.tforneberg.patchdb.model.User
 import de.tforneberg.patchdb.model.User.UserStatus
 import de.tforneberg.patchdb.model.dto.ChangePasswordRequestData
 import de.tforneberg.patchdb.model.dto.RegisterRequestData
+import de.tforneberg.patchdb.model.dto.ResetPasswordRequestData
 import de.tforneberg.patchdb.repo.PatchRepository
 import de.tforneberg.patchdb.repo.UserRepository
 import de.tforneberg.patchdb.repo.UserVerificationTokenRepository
 import de.tforneberg.patchdb.repo.utils.UserUtils
-import de.tforneberg.patchdb.service.RecaptchaService
+import de.tforneberg.patchdb.service.recaptcha.RecaptchaService
 import de.tforneberg.patchdb.service.imageupload.ImageUploadService
 import de.tforneberg.patchdb.validation.ChangePasswordRequestValidator
 import de.tforneberg.patchdb.validation.RegisterRequestValidator
+import de.tforneberg.patchdb.validation.ResetPasswordRequestValidator
 import org.springframework.context.ApplicationEventPublisher
 import org.springframework.data.repository.findByIdOrNull
 import org.springframework.http.HttpStatus
@@ -40,24 +43,33 @@ class UserController(
         private val patchRepo: PatchRepository,
         private val changePwValidator: ChangePasswordRequestValidator,
         private val registerValidator: RegisterRequestValidator,
+        private val resetPasswordValidator: ResetPasswordRequestValidator,
         private val passwordEncoder: PasswordEncoder,
         private val userUtils: UserUtils,
         private val eventPublisher: ApplicationEventPublisher,
         private val imageUploadService: ImageUploadService,
-        private val recaptchaService: RecaptchaService) : PatchdbController() {
+        private val recaptchaService: RecaptchaService
+) : PatchdbController() {
 
     interface UserAndPatchDefaultView : Patch.DefaultView, User.DefaultView
 
     //GET
     @GetMapping(Constants.ID_MAPPING)
-    @JsonView(User.CompleteView::class)
-    fun getById(@PathVariable("id") id: Int): ResponseEntity<User> {
-        return getResponseOrNotFound(userRepository.findByIdOrNull(id))
+    @JsonView(User.DefaultView::class)
+    fun getById(@PathVariable("id") userId: Int, auth: Authentication?): ResponseEntity<User> {
+        return getResponseOrNotFound(userRepository.findByIdOrNull(userId))
+    }
+
+    @GetMapping(Constants.ID_MAPPING + "/private")
+    @PreAuthorize(Constants.AUTH_ID_IS_OF_REQUESTING_USER)
+    @JsonView(User.OwnerCompleteView::class)
+    fun getByIdWithPrivateFields(@PathVariable("id") userId: Int): ResponseEntity<User> {
+        return getResponseOrNotFound(userRepository.findByIdOrNull(userId))
     }
 
     @GetMapping("/login")
     fun login(@RequestParam("recaptchaToken") recaptchaToken: String): ResponseEntity<Void> {
-        return if (recaptchaService.isAValidUserAction(recaptchaToken, "LOGIN")) {
+        return if (recaptchaService.isSafe(recaptchaToken, "LOGIN")) {
             ResponseEntity.ok().build()
         } else {
             //TODO handle this in a proper way, e.g. one time password per mail
@@ -68,7 +80,7 @@ class UserController(
     @GetMapping("/name/{name}") //better as query param ...  /&name={name} would allow generic search for every field, more REST conform
     @JsonView(User.CompleteView::class)
     fun getByName(@PathVariable("name") name: String): ResponseEntity<User> {
-        return getResponseOrNotFound(userRepository.findByName(name));
+        return getResponseOrNotFound(userRepository.findByName(name))
     }
 
     @GetMapping
@@ -109,7 +121,7 @@ class UserController(
         if (result.hasErrors()) {
             throw BadRequestException(result)
         }
-        return if (recaptchaService.isAValidUserAction(req.recaptchaToken, "REGISTER")) {
+        return if (recaptchaService.isSafe(req.recaptchaToken, "REGISTER")) {
             var user = User(
                 name = req.name,
                 email = req.email,
@@ -117,13 +129,29 @@ class UserController(
                 password = passwordEncoder.encode(req.password)
             )
             user = userRepository.save(user)
-            eventPublisher.publishEvent(OnRegistrationCompleteEvent(user, request.locale))
+            eventPublisher.publishEvent(RegistrationCompleteEvent(user, request.locale))
 
             ResponseEntity.ok().build()
         } else {
             //TODO handle this in a proper way, e.g. one time password per mail
             ResponseEntity.badRequest().build()
         }
+    }
+
+    @PostMapping("/resetPassword")
+    fun resetPassword(@RequestBody req: ResetPasswordRequestData, result: BindingResult, request: HttpServletRequest): ResponseEntity<Void> {
+        resetPasswordValidator.validate(req, result)
+        if (result.hasErrors()) {
+            throw BadRequestException(result)
+        }
+
+        if (recaptchaService.isSafe(req.recaptchaToken, "RESET_PASSWORD")) {
+            userRepository.findByEmail(req.email)?.let {
+                eventPublisher.publishEvent(ResetPasswordEvent(it))
+                return ResponseEntity.ok().build()
+            }
+        }
+        return ResponseEntity.badRequest().build()
     }
 
     @PostMapping(Constants.ID_MAPPING + "/image")
@@ -154,7 +182,7 @@ class UserController(
             val patches = if (hasUserAnyStatus(auth, UserStatus.admin, UserStatus.mod)) {
                 patchRepo.findPatchesByUserId(id, pageable)
             } else {
-                patchRepo.findPatchesByUserIdAndWithState(id, PatchState.approved, pageable)
+                patchRepo.findPatchesByUserIdAndWithState(id, PatchState.approved.name, pageable)
             }
             ResponseEntity.ok(Collection(patches.content, it.name))
         } ?: ResponseEntity.notFound().build()
@@ -178,7 +206,7 @@ class UserController(
     }
 
     @PatchMapping(Constants.ID_MAPPING + "/password")
-    @PreAuthorize(Constants.AUTH_ID_IS_OF_REQUESTING_USER)
+    @PreAuthorize(Constants.AUTH_ID_IS_OF_REQUESTING_USER) //password change by already logged in user
     fun changePassword(@RequestBody data: ChangePasswordRequestData,
                        @PathVariable("id") userId: Int,
                        result: BindingResult

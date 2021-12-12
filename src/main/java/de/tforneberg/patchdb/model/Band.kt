@@ -8,7 +8,7 @@ import javax.persistence.*
 @Table(name = "bands")
 @JsonIgnoreProperties("hibernateLazyInitializer", "handler")
 @JsonView(Band.DefaultView::class)
-data class Band(
+class Band(
     @field:Id
     @field:GeneratedValue(strategy = GenerationType.IDENTITY)
     @field:Column(name = "id")

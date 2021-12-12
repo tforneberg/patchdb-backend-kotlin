@@ -1,10 +1,9 @@
 package de.tforneberg.patchdb.event.listener
 
-import de.tforneberg.patchdb.event.OnRegistrationCompleteEvent
-import de.tforneberg.patchdb.model.UserVerificationToken
+import de.tforneberg.patchdb.event.RegistrationCompleteEvent
+import de.tforneberg.patchdb.model.usermgmt.token.UserVerificationToken
 import de.tforneberg.patchdb.repo.UserVerificationTokenRepository
 import org.springframework.context.ApplicationListener
-import org.springframework.context.MessageSource
 import org.springframework.mail.SimpleMailMessage
 import org.springframework.mail.javamail.JavaMailSender
 import org.springframework.stereotype.Component
@@ -12,18 +11,17 @@ import org.springframework.web.servlet.support.ServletUriComponentsBuilder
 import java.util.*
 
 @Component
-class RegistrationCompleteListener(
+class RegistrationCompleteEventListener(
         private val userVerificationTokenRepository: UserVerificationTokenRepository,
-        private val messageSource: MessageSource,
         private val mailSender: JavaMailSender)
-    : ApplicationListener<OnRegistrationCompleteEvent> {
+    : ApplicationListener<RegistrationCompleteEvent> {
 
-    override fun onApplicationEvent(event: OnRegistrationCompleteEvent) {
+    override fun onApplicationEvent(event: RegistrationCompleteEvent) {
         confirmRegistration(event)
     }
 
-    private fun confirmRegistration(event: OnRegistrationCompleteEvent) {
-        val userVerificationToken = UserVerificationToken(UUID.randomUUID().toString(), event.user, 1440)
+    private fun confirmRegistration(event: RegistrationCompleteEvent) {
+        val userVerificationToken = UserVerificationToken(UUID.randomUUID().toString(), event.user)
         userVerificationTokenRepository.save(userVerificationToken)
 
         val recipientAddress: String? = event.user.email

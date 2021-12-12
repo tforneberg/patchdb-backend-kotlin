@@ -1,7 +1,7 @@
 package de.tforneberg.patchdb.repo
 
 import de.tforneberg.patchdb.model.User
-import de.tforneberg.patchdb.model.UserVerificationToken
+import de.tforneberg.patchdb.model.usermgmt.token.UserVerificationToken
 import org.springframework.data.jpa.repository.JpaRepository
 
 interface UserVerificationTokenRepository : JpaRepository<UserVerificationToken, Int> {

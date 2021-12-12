@@ -1,6 +1,7 @@
 package de.tforneberg.patchdb.controller
 
 import com.fasterxml.jackson.databind.ObjectMapper
+import de.tforneberg.patchdb.model.User
 import de.tforneberg.patchdb.model.User.UserStatus
 import de.tforneberg.patchdb.security.ChangeAllowedBy
 import mu.KotlinLogging
@@ -76,6 +77,10 @@ abstract class PatchdbController {
                 .anyMatch { role: UserStatus -> userHasStatus(auth, role) }
     }
 
+    fun isUser(auth: Authentication?, user: User?): Boolean {
+        return auth != null && user != null && auth.name != null && auth.name.equals(user.name)
+    }
+
     /**
      * Checks if the given user/authentication has the given UserStatus in his authority string
      */
@@ -108,10 +113,10 @@ abstract class PatchdbController {
     }
 
 	fun <T> getResponseOrNotFound(result: T?): ResponseEntity<T> {
-        return result?.let { ResponseEntity.ok().body(it) }?: ResponseEntity.notFound().build();
+        return result?.let { ResponseEntity.ok().body(it) }?: ResponseEntity.notFound().build()
     }
 
     fun <T> getResponseOrBadRequest(result: T?): ResponseEntity<T> {
-        return result?.let { ResponseEntity.ok().body(it) }?: ResponseEntity.badRequest().build();
+        return result?.let { ResponseEntity.ok().body(it) }?: ResponseEntity.badRequest().build()
     }
 }

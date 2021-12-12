@@ -284,6 +284,9 @@
 				        	<excludeClassPattern>
 				        		${typescript.codegeneration.pattern}Views
 				        	</excludeClassPattern>
+							<excludeClassPattern>
+								${typescript.codegeneration.pattern}Companion
+							</excludeClassPattern>
 			        	</excludeClassPatterns>
 				        <mapEnum>asEnum</mapEnum>
 				        <nonConstEnums>true</nonConstEnums>
